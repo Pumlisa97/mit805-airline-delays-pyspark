@@ -1,0 +1,73 @@
+== Physical Plan ==
+AdaptiveSparkPlan (12)
++- Sort (11)
+   +- Exchange (10)
+      +- Project (9)
+         +- HashAggregate (8)
+            +- Exchange (7)
+               +- HashAggregate (6)
+                  +- Project (5)
+                     +- Project (4)
+                        +- Project (3)
+                           +- Filter (2)
+                              +- Scan csv  (1)
+
+
+(1) Scan csv 
+Output [11]: [Year#17, FlightDate#22, CRSDepTime#46, ArrDelay#59, Cancelled#64, Diverted#66, CarrierDelay#73, WeatherDelay#74, NASDelay#75, SecurityDelay#76, LateAircraftDelay#77]
+Batched: false
+Location: InMemoryFileIndex [file:/content/drive/MyDrive/MIT805_Airline_Delays/data/working/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2020_1.csv, ... 59 entries]
+PushedFilters: [IsNotNull(Year), IsNotNull(CRSDepTime)]
+ReadSchema: struct<Year:string,FlightDate:string,CRSDepTime:string,ArrDelay:string,Cancelled:string,Diverted:string,CarrierDelay:string,WeatherDelay:string,NASDelay:string,SecurityDelay:string,LateAircraftDelay:string>
+
+(2) Filter
+Input [11]: [Year#17, FlightDate#22, CRSDepTime#46, ArrDelay#59, Cancelled#64, Diverted#66, CarrierDelay#73, WeatherDelay#74, NASDelay#75, SecurityDelay#76, LateAircraftDelay#77]
+Condition : (((((((isnotnull(Year#17) AND isnotnull(CRSDepTime#46)) AND (cast(Year#17 as int) >= 2020)) AND (cast(Year#17 as int) <= 2024)) AND isnotnull(cast(gettimestamp(FlightDate#22, yyyy-MM-dd, TimestampType, try_to_timestamp, Some(Etc/UTC), true) as date))) AND (cast(CRSDepTime#46 as int) >= 0)) AND (cast(CRSDepTime#46 as int) <= 2359)) AND ((cast(CRSDepTime#46 as int) % 100) < 60))
+
+(3) Project
+Output [10]: [cast(Year#17 as int) AS Year#127, cast(CRSDepTime#46 as int) AS CRSDepTime#129, cast(Cancelled#64 as double) AS Cancelled#130, cast(Diverted#66 as double) AS Diverted#131, cast(ArrDelay#59 as double) AS ArrDelay#132, cast(CarrierDelay#73 as double) AS CarrierDelay#134, cast(WeatherDelay#74 as double) AS WeatherDelay#135, cast(NASDelay#75 as double) AS NASDelay#136, cast(SecurityDelay#76 as double) AS SecurityDelay#137, cast(LateAircraftDelay#77 as double) AS LateAircraftDelay#138]
+Input [11]: [Year#17, FlightDate#22, CRSDepTime#46, ArrDelay#59, Cancelled#64, Diverted#66, CarrierDelay#73, WeatherDelay#74, NASDelay#75, SecurityDelay#76, LateAircraftDelay#77]
+
+(4) Project
+Output [11]: [Year#127, Cancelled#130, Diverted#131, ArrDelay#132, CarrierDelay#134, WeatherDelay#135, NASDelay#136, SecurityDelay#137, LateAircraftDelay#138, cast(FLOOR((cast(CRSDepTime#129 as double) / 100.0)) as int) AS ScheduledDepHour#140, CASE WHEN (((Cancelled#130 = 0.0) AND (Diverted#131 = 0.0)) AND isnotnull(ArrDelay#132)) THEN 1 ELSE 0 END AS CompletedArrival#142]
+Input [10]: [Year#127, CRSDepTime#129, Cancelled#130, Diverted#131, ArrDelay#132, CarrierDelay#134, WeatherDelay#135, NASDelay#136, SecurityDelay#137, LateAircraftDelay#138]
+
+(5) Project
+Output [12]: [Year#127, Cancelled#130, Diverted#131, ArrDelay#132, CarrierDelay#134, WeatherDelay#135, NASDelay#136, SecurityDelay#137, LateAircraftDelay#138, ScheduledDepHour#140, CompletedArrival#142, CASE WHEN ((CompletedArrival#142 = 1) AND (ArrDelay#132 >= 15.0)) THEN 1 ELSE 0 END AS LateCompletedArrival#143]
+Input [11]: [Year#127, Cancelled#130, Diverted#131, ArrDelay#132, CarrierDelay#134, WeatherDelay#135, NASDelay#136, SecurityDelay#137, LateAircraftDelay#138, ScheduledDepHour#140, CompletedArrival#142]
+
+(6) HashAggregate
+Input [12]: [Year#127, Cancelled#130, Diverted#131, ArrDelay#132, CarrierDelay#134, WeatherDelay#135, NASDelay#136, SecurityDelay#137, LateAircraftDelay#138, ScheduledDepHour#140, CompletedArrival#142, LateCompletedArrival#143]
+Keys [2]: [Year#127, ScheduledDepHour#140]
+Functions [11]: [partial_count(1), partial_sum(CASE WHEN (Cancelled#130 = 1.0) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (Diverted#131 = 1.0) THEN 1 ELSE 0 END), partial_sum(CompletedArrival#142), partial_sum(LateCompletedArrival#143), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN ArrDelay#132 ELSE 0.0 END), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(CarrierDelay#134, 0.0) ELSE 0.0 END), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(WeatherDelay#135, 0.0) ELSE 0.0 END), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(NASDelay#136, 0.0) ELSE 0.0 END), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(SecurityDelay#137, 0.0) ELSE 0.0 END), partial_sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(LateAircraftDelay#138, 0.0) ELSE 0.0 END)]
+Aggregate Attributes [11]: [count#184L, sum#185L, sum#186L, sum#187L, sum#188L, sum#189, sum#190, sum#191, sum#192, sum#193, sum#194]
+Results [13]: [Year#127, ScheduledDepHour#140, count#195L, sum#196L, sum#197L, sum#198L, sum#199L, sum#200, sum#201, sum#202, sum#203, sum#204, sum#205]
+
+(7) Exchange
+Input [13]: [Year#127, ScheduledDepHour#140, count#195L, sum#196L, sum#197L, sum#198L, sum#199L, sum#200, sum#201, sum#202, sum#203, sum#204, sum#205]
+Arguments: hashpartitioning(Year#127, ScheduledDepHour#140, 200), ENSURE_REQUIREMENTS, [plan_id=50]
+
+(8) HashAggregate
+Input [13]: [Year#127, ScheduledDepHour#140, count#195L, sum#196L, sum#197L, sum#198L, sum#199L, sum#200, sum#201, sum#202, sum#203, sum#204, sum#205]
+Keys [2]: [Year#127, ScheduledDepHour#140]
+Functions [11]: [count(1), sum(CASE WHEN (Cancelled#130 = 1.0) THEN 1 ELSE 0 END), sum(CASE WHEN (Diverted#131 = 1.0) THEN 1 ELSE 0 END), sum(CompletedArrival#142), sum(LateCompletedArrival#143), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN ArrDelay#132 ELSE 0.0 END), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(CarrierDelay#134, 0.0) ELSE 0.0 END), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(WeatherDelay#135, 0.0) ELSE 0.0 END), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(NASDelay#136, 0.0) ELSE 0.0 END), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(SecurityDelay#137, 0.0) ELSE 0.0 END), sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(LateAircraftDelay#138, 0.0) ELSE 0.0 END)]
+Aggregate Attributes [11]: [count(1)#171L, sum(CASE WHEN (Cancelled#130 = 1.0) THEN 1 ELSE 0 END)#180L, sum(CASE WHEN (Diverted#131 = 1.0) THEN 1 ELSE 0 END)#181L, sum(CompletedArrival#142)#172L, sum(LateCompletedArrival#143)#173L, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN ArrDelay#132 ELSE 0.0 END)#174, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(CarrierDelay#134, 0.0) ELSE 0.0 END)#175, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(WeatherDelay#135, 0.0) ELSE 0.0 END)#176, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(NASDelay#136, 0.0) ELSE 0.0 END)#177, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(SecurityDelay#137, 0.0) ELSE 0.0 END)#178, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(LateAircraftDelay#138, 0.0) ELSE 0.0 END)#179]
+Results [13]: [Year#127, ScheduledDepHour#140, count(1)#171L AS scheduled_flights#144L, sum(CASE WHEN (Cancelled#130 = 1.0) THEN 1 ELSE 0 END)#180L AS cancelled_flights#145L, sum(CASE WHEN (Diverted#131 = 1.0) THEN 1 ELSE 0 END)#181L AS diverted_flights#146L, sum(CompletedArrival#142)#172L AS completed_arrivals#147L, sum(LateCompletedArrival#143)#173L AS late_completed_arrivals#148L, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN ArrDelay#132 ELSE 0.0 END)#174 AS late_arrival_delay_minutes#149, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(CarrierDelay#134, 0.0) ELSE 0.0 END)#175 AS CarrierDelay_minutes#150, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(WeatherDelay#135, 0.0) ELSE 0.0 END)#176 AS WeatherDelay_minutes#151, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(NASDelay#136, 0.0) ELSE 0.0 END)#177 AS NASDelay_minutes#152, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(SecurityDelay#137, 0.0) ELSE 0.0 END)#178 AS SecurityDelay_minutes#153, sum(CASE WHEN (LateCompletedArrival#143 = 1) THEN coalesce(LateAircraftDelay#138, 0.0) ELSE 0.0 END)#179 AS LateAircraftDelay_minutes#154]
+
+(9) Project
+Output [15]: [Year#127, ScheduledDepHour#140, scheduled_flights#144L, cancelled_flights#145L, diverted_flights#146L, completed_arrivals#147L, late_completed_arrivals#148L, late_arrival_delay_minutes#149, CarrierDelay_minutes#150, WeatherDelay_minutes#151, NASDelay_minutes#152, SecurityDelay_minutes#153, LateAircraftDelay_minutes#154, (cast(late_completed_arrivals#148L as double) / cast(scheduled_flights#144L as double)) AS late_rate_scheduled#182, CASE WHEN (completed_arrivals#147L > 0) THEN (cast(late_completed_arrivals#148L as double) / cast(completed_arrivals#147L as double)) END AS late_rate_completed#183]
+Input [13]: [Year#127, ScheduledDepHour#140, scheduled_flights#144L, cancelled_flights#145L, diverted_flights#146L, completed_arrivals#147L, late_completed_arrivals#148L, late_arrival_delay_minutes#149, CarrierDelay_minutes#150, WeatherDelay_minutes#151, NASDelay_minutes#152, SecurityDelay_minutes#153, LateAircraftDelay_minutes#154]
+
+(10) Exchange
+Input [15]: [Year#127, ScheduledDepHour#140, scheduled_flights#144L, cancelled_flights#145L, diverted_flights#146L, completed_arrivals#147L, late_completed_arrivals#148L, late_arrival_delay_minutes#149, CarrierDelay_minutes#150, WeatherDelay_minutes#151, NASDelay_minutes#152, SecurityDelay_minutes#153, LateAircraftDelay_minutes#154, late_rate_scheduled#182, late_rate_completed#183]
+Arguments: rangepartitioning(Year#127 ASC NULLS FIRST, ScheduledDepHour#140 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=54]
+
+(11) Sort
+Input [15]: [Year#127, ScheduledDepHour#140, scheduled_flights#144L, cancelled_flights#145L, diverted_flights#146L, completed_arrivals#147L, late_completed_arrivals#148L, late_arrival_delay_minutes#149, CarrierDelay_minutes#150, WeatherDelay_minutes#151, NASDelay_minutes#152, SecurityDelay_minutes#153, LateAircraftDelay_minutes#154, late_rate_scheduled#182, late_rate_completed#183]
+Arguments: [Year#127 ASC NULLS FIRST, ScheduledDepHour#140 ASC NULLS FIRST], true, 0
+
+(12) AdaptiveSparkPlan
+Output [15]: [Year#127, ScheduledDepHour#140, scheduled_flights#144L, cancelled_flights#145L, diverted_flights#146L, completed_arrivals#147L, late_completed_arrivals#148L, late_arrival_delay_minutes#149, CarrierDelay_minutes#150, WeatherDelay_minutes#151, NASDelay_minutes#152, SecurityDelay_minutes#153, LateAircraftDelay_minutes#154, late_rate_scheduled#182, late_rate_completed#183]
+Arguments: isFinalPlan=false
+
+

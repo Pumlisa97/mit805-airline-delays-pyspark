@@ -1,0 +1,47 @@
+MIT 805 Part 2 — Spark Execution Evidence
+Generated: 2026-09-26T07:33:51
+
+Spark application ID: local-1790406374841
+Spark version: 4.0.4
+Spark UI URL reported by Spark: http://723fe5b066b8:4040
+Configured spark.sql.shuffle.partitions: 200
+
+Input validation
+----------------
+Selected CSV files: 60
+Observed year-month periods: 60
+Missing periods: none
+Processed input size: 14.130 GB (13.159 GiB)
+
+Action executed
+---------------
+hourly_by_year.collect()
+
+Output
+------
+Year-hour groups returned: 120
+Valid-hour scheduled-flight records: 31,339,835
+Late completed arrivals: 5,655,716
+
+Physical-plan evidence
+----------------------
+The saved formatted physical plan is stored in:
+/content/drive/MyDrive/MIT805_Airline_Delays/output/part2/execution_evidence/year_hour_physical_plan.txt
+
+Key confirmed operators:
+- Scan csv
+- Filter
+- Project
+- Partial HashAggregate keyed by Year and ScheduledDepHour
+- Exchange: hashpartitioning(Year, ScheduledDepHour, 200)
+- Final HashAggregate keyed by Year and ScheduledDepHour
+- Exchange: rangepartitioning(Year ASC, ScheduledDepHour ASC, 200)
+- Sort
+- AdaptiveSparkPlan
+
+Interpretation
+--------------
+The hash-partitioning Exchange is the grouping shuffle required to bring
+identical (Year, ScheduledDepHour) keys together for final aggregation.
+The range-partitioning Exchange is used for final ordering, not for the
+analytical groupBy reduction.
