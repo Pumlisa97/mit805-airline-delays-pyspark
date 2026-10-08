@@ -3,9 +3,9 @@
 ## Arrival-Delay Risk by Scheduled Departure Time (2020–2024) Using PySpark
 
 ### Authors
-
-- Makhosazane Mthethwa (u14241839)
 - Pumlisa Lusiba (u25162323)
+- Makhosazane Mthethwa (u14241839)
+
 
 Prepared for: Dr. Olaperi Okuboyejo
 
