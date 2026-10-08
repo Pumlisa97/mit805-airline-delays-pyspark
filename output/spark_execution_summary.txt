@@ -1,0 +1,51 @@
+
+MIT 805 Part 2 — Spark Execution Evidence
+Generated: 2026-10-08T13:55:25.124061
+
+Spark application ID: local-1791467011687
+Spark version: 4.0.4
+Spark UI URL reported by Spark: http://90f380d7cd18:4040
+Configured spark.sql.shuffle.partitions: 200
+
+Input validation
+----------------
+Selected CSV files: 4
+
+Action executed
+---------------
+top_airlines.show()
+
+Output
+------
+Rows loaded: 2,240,444
+Rows after cleaning: 2,202,967
+
+Top-level analyses completed:
+- Airline delay analysis
+- Airport delay analysis
+- Monthly trend analysis
+- Delay cause analysis
+
+Physical-plan evidence
+----------------------
+The Spark execution plans were generated using:
+
+top_airlines.explain(True)
+airport_delay.explain(True)
+
+Key confirmed operators:
+- FileScan csv
+- Filter
+- Project
+- HashAggregate
+- Exchange hashpartitioning
+- Sort
+- AdaptiveSparkPlan
+
+Interpretation
+--------------
+The Exchange hashpartitioning operator indicates a shuffle stage where
+records were redistributed across partitions before aggregation.
+The HashAggregate operator performed distributed aggregation to calculate
+average delays and summary statistics. These operations demonstrate
+MapReduce-style processing within Spark's DAG execution model.
